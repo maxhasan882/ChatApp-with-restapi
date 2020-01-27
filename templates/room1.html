@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700" />
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+        <div class="left">
+            <div class="top">
+                <input type="text" placeholder="Search" />
+                <a href="javascript:;" class="search"></a>
+            </div>
+            <ul class="people">
+                {% for ch in chat_list %}
+                    <li class="person">
+                        <a href="javascript:AddToList({{ ch.pk }})">
+                            <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/382994/thomas.jpg" alt="" />
+                            <span class="name">{{ ch }}</span>
+                            <p></p>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="right">
+            <div >
+                <ul id="chatting">
+
+                </ul>
+            </div>
+            <div class="write">
+                <a href="#" class="write-link attach"></a>
+                <input id="chatmessageinput" type="text" />
+                <a href="#" class="write-link smiley"></a>
+                <button id="chatmessagesubmit" class="write-link send"></button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    let friends = {
+        list: document.querySelector('ul.people'),
+        all: document.querySelectorAll('.left .person'),
+        name: ''
+      },
+      chat = {
+        container: document.querySelector('.container .right'),
+        current: null,
+        person: null,
+        name: document.querySelector('.container .right .top .name')
+      }
+
+    var roomName = {{ room_name_json }};
+            var username = {{ username }};
+            var userID = {{ userId }};
+            var chatSocket = new WebSocket(
+                'ws://' + window.location.host +
+                '/ws/chat/room/' + roomName + '/');
+            chatSocket.onopen = function(e) {
+                console.log("This is open");
+              fetchMessages(roomName);
+            }
+            chatSocket.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                console.log("I got it", data);
+                if (data['command'] === 'messages') {
+                  for (let i=0; i<data['messages'].length; i++) {
+                    createMessage(data['messages'][i]);
+                  }
+                } else if (data['command'] === 'new_message'){
+                  createMessage(data['message']);
+                }
+            };
+            chatSocket.onclose = function(e) {
+                console.error('Chat socket closed unexpectedly');
+            };
+            document.querySelector('#chatmessagesubmit').onclick = function(e) {
+                var messageInputDom = document.getElementById('chatmessageinput');
+                console.log("hum", messageInputDom.value);
+                var message = messageInputDom.value;
+                chatSocket.send(JSON.stringify({
+                    'command': 'new_message',
+                    'message': message,
+                    'from': userID,
+                    'room':roomName
+                }));
+                messageInputDom.value = '';
+            };
+            function fetchMessages(room) {
+              chatSocket.send(JSON.stringify({'command': 'fetch_messages', 'room':room }));
+            }
+            function createMessage(data) {
+                console.log("Yes got you: ", data)
+                  var author = data['sender'];
+                  var msgListTag = document.createElement('li');
+                  var pTag = document.createElement('p');
+                  pTag.textContent = data.content;
+                  msgListTag.appendChild(pTag);
+                  msgListTag.classList.add("bubble");
+                  msgListTag.classList.add("you");
+                  document.querySelector('#chatting').appendChild(msgListTag);
+
+            }
+
+            // route to the selected chat
+
+        function AddToList(ch) {
+                window.location.pathname = '/chat/' + ch + '/';
+            }
+
+</script>
+
+</html>

@@ -1,0 +1,88 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <meta charset="utf-8"/>
+        <title>Chat Room</title>
+    </head>
+    <body>
+        <div class="container">
+            <ul class="list-group">
+                {% for participant in participants %}
+                    <li class="list-group-item">{{ participant }}</li>
+                {% endfor %}
+            </ul>
+            <div class="form-group">
+                <label for="exampleFormControlTextarea1">Example textarea</label>
+                <textarea class="form-control" id="chat-log" rows="3"></textarea>
+                <br>
+                <input type="email" class="form-control" id="chatmessageinput" aria-describedby="emailHelp" placeholder="Enter email">
+                <br>
+                <button id="chatmessagesubmit" type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        <ul id="chatting" class="list-group">
+
+        </ul>
+        </div>
+    </body>
+        <script>
+            var roomName = {{ room_name_json }};
+            var username = {{ username }};
+            var userID = {{ userId }};
+            var chatSocket = new WebSocket(
+                'ws://' + window.location.host +
+                '/ws/chat/' + roomName + '/');
+            chatSocket.onopen = function(e) {
+                console.log("This is open");
+                fetchMessages(roomName);
+            };
+            chatSocket.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                console.log("I got it", data);
+                if (data['command'] === 'messages') {
+                  for (let i=0; i<data['messages'].length; i++) {
+                    createMessage(data['messages'][i]);
+                  }
+                } else if (data['command'] === 'new_message'){
+                  createMessage(data['message']);
+                }
+            };
+            chatSocket.onclose = function(e) {
+                console.error('Chat socket closed unexpectedly');
+            };
+            document.querySelector('#chatmessagesubmit').onclick = function(e) {
+                var messageInputDom = document.getElementById('chatmessageinput');
+                console.log("hum", messageInputDom.value);
+                var message = messageInputDom.value;
+                chatSocket.send(JSON.stringify({
+                    'command': 'new_message',
+                    'message': message,
+                    'from': userID,
+                    'room':roomName
+                }));
+                messageInputDom.value = '';
+            };
+            //GET REQUEST
+            function fetchMessages(room) {
+              chatSocket.send(JSON.stringify({'command': 'fetch_messages', 'room':room }));
+            }
+            function createMessage(data) {
+                console.log("Yes got you: ", data);
+                  var author = data['sender'];
+                //document.getElementById("myText").value = data.content;
+                  var msgListTag = document.createElement('li');
+                  var pTag = document.createElement('p');
+                  pTag.textContent = data.content;
+                  msgListTag.appendChild(pTag);
+                  msgListTag.classList.add("list-group-item");
+                  document.querySelector('#chatting').appendChild(msgListTag);
+            }
+
+        </script>
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+</html>

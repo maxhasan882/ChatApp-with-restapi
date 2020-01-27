@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700" />
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+        <div class="left">
+            <div class="top">
+                <input type="text" placeholder="Search" />
+                <a href="javascript:;" class="search"></a>
+            </div>
+            <ul class="people">
+                {% for ch in chat_list %}
+                    <li class="person">
+                        <a href="javascript:AddToList({{ ch.pk }})">
+                            <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/382994/thomas.jpg" alt="" />
+                            <span class="name">{{ ch }}</span>
+                            <p></p>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+
+
+        <div class="right">
+            <div class="top"><span>To: <span class="name">Dog Woofson</span></span></div>
+            <div class="chat" data-chat="person1">
+                <div class="conversation-start">
+                    <span>Today, 6:48 AM</span>
+                </div>
+                <div class="bubble you">
+                    Hello,
+                </div>
+                <div class="bubble you">
+                    it's me.
+                </div>
+                <div class="bubble you">
+                    I was wondering...
+                </div>
+            </div>
+            <div class="write">
+                <a href="javascript:;" class="write-link attach"></a>
+                <input type="text" />
+                <a href="javascript:;" class="write-link smiley"></a>
+                <a href="javascript:;" class="write-link send"></a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    let friends = {
+        list: document.querySelector('ul.people'),
+        all: document.querySelectorAll('.left .person'),
+        name: ''
+      },
+      chat = {
+        container: document.querySelector('.container .right'),
+        current: null,
+        person: null,
+        name: document.querySelector('.container .right .top .name')
+      }
+
+    friends.all.forEach(f => {
+      f.addEventListener('mousedown', () => {
+        f.classList.contains('active') || setAciveChat(f)
+      })
+    });
+
+    function setAciveChat(f) {
+      friends.list.querySelector('.active').classList.remove('active')
+      f.classList.add('active')
+      chat.current = chat.container.querySelector('.active-chat')
+      chat.person = f.getAttribute('data-chat')
+      chat.current.classList.remove('active-chat')
+      chat.container.querySelector('[data-chat="' + chat.person + '"]').classList.add('active-chat')
+      friends.name = f.querySelector('.name').innerText
+      chat.name.innerHTML = friends.name
+    }
+            // route to the selected chat
+
+        function AddToList(ch) {
+            console.log(ch);
+                window.location.pathname = '/chat/room/' + ch + '/';
+            }
+
+</script>
+</html>
